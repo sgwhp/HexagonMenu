@@ -1,11 +1,13 @@
 package cn.robust.hexagon;
 
+import android.graphics.Color;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import cn.robust.hexagon.library.menu.HexagonMenu;
+import cn.robust.hexagon.library.menu.HexagonMenuItem;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -15,6 +17,35 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 //        setContentView(new HexagonMenu(this));
+        HexagonMenu menu = (HexagonMenu) findViewById(R.id.menu);
+        HexagonMenuItem menuItem = menu.add(HexagonMenu.ITEM_POS_CENTER);
+        menuItem.setIcon(R.drawable.menu_forum);
+        menuItem.setTextColor(Color.BLACK);
+        menuItem.setText("论坛");
+
+        menuItem = menu.add(HexagonMenu.ITEM_POS_TOP_RIGHT);
+        menuItem.setIcon(R.drawable.menu_torrent);
+        menuItem.setText("种子");
+
+        menuItem = menu.add(HexagonMenu.ITEM_POS_RIGHT);
+        menuItem.setIcon(R.drawable.menu_remote);
+        menuItem.setText("远程控制");
+
+        menuItem = menu.add(HexagonMenu.ITEM_POS_BOTTOM_RIGHT);
+        menuItem.setIcon(R.drawable.menu_exit);
+        menuItem.setText("退出");
+
+        menuItem = menu.add(HexagonMenu.ITEM_POS_BOTTOM_LEFT);
+        menuItem.setIcon(R.drawable.menu_setting);
+        menuItem.setText("设置");
+
+        menuItem = menu.add(HexagonMenu.ITEM_POS_LEFT);
+        menuItem.setIcon(R.drawable.menu_message);
+        menuItem.setText("消息中心");
+
+        menuItem = menu.add(HexagonMenu.ITEM_POS_TOP_LEFT);
+        menuItem.setIcon(R.drawable.menu_help);
+        menuItem.setText("帮助");
     }
 
 

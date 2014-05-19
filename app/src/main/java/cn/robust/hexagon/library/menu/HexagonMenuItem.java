@@ -20,7 +20,7 @@ import cn.robust.hexagon.Util;
 import cn.robust.hexagon.library.Point;
 
 /**
- * 正六边形，顶点默认顺序如下：
+ * hexagon，the order of vertex is as follow:
  *        0
  *      5 /\ 1
  *       |  |
@@ -28,7 +28,7 @@ import cn.robust.hexagon.library.Point;
  *        3
  * Created by robust on 2014-04-25.
  */
-abstract class HexagonMenuItem {
+public abstract class HexagonMenuItem {
     public static final float SQRT_3 = (float)Math.sqrt(3);
     private static final float precision = 1f;//精度
     protected Context mContext;
@@ -95,7 +95,7 @@ abstract class HexagonMenuItem {
         BoringLayout.Metrics metrics = BoringLayout.isBoring(mText, mTextPaint);
         if(metrics == null){
             //中文字符并非left-to-right的unicode字符，用英文字符生成一个BoringLayout.Metrics
-            metrics = BoringLayout.isBoring("test", mTextPaint);
+            metrics = BoringLayout.isBoring("boring layout sucks", mTextPaint);
             metrics.width = outer.width();
         }
         mLayout = new BoringLayout(mText, mTextPaint, outer.width(), Layout.Alignment.ALIGN_CENTER
@@ -293,6 +293,7 @@ abstract class HexagonMenuItem {
     }
 
     /**
+     * see if point (x,y) is inside the hexagon's outer rectangle <br/>
      * 判断点(x,y)是否在六边形的外接矩形内
      * @param x
      * @param y
@@ -306,12 +307,13 @@ abstract class HexagonMenuItem {
     }
 
     /**
+     * Calculate the intersection of ray and segment(side of hexagon).<br/>
      * 计算射线与线段的交点，射线可取平行于x轴的一条线，不会产生与六边形的边重合的情况
-     * @param rayStart
-     * @param rayEnd
-     * @param segmentStart
-     * @param segmentEnd
-     * @return
+     * @param rayStart 射线起点
+     * @param rayEnd 射线终点
+     * @param segmentStart 线段起点
+     * @param segmentEnd 线段终点
+     * @return 交点，无交点则返回null
      */
     private Point getIntersection(Point rayStart, Point rayEnd, Point segmentStart, Point segmentEnd){
         //判断是否平行，斜率相等，两条线平行，没有交点（重合的情况不处理）
@@ -369,7 +371,6 @@ abstract class HexagonMenuItem {
                         + (segmentEnd.y - y) * (segmentEnd.y - y))
                 - Math.sqrt((segmentStart.x - x) * (segmentStart.x - x)
                 + (segmentStart.y - y) * (segmentStart.y - y));
-//        Log.v("whp", "s " + result);
         //判断交点是否在线段（六边形的边）上
         if(result < -precision){
             return null;
@@ -379,7 +380,6 @@ abstract class HexagonMenuItem {
                         + (rayEnd.y - y) * (rayEnd.y - y))
                 - Math.sqrt((rayStart.x - x) * (rayStart.x - x)
                 + (rayStart.y - y) * (rayStart.y - y));
-//        Log.v("whp", "r " + result);
         //判断交点是否在射线上
         if(result > -precision){
             //交点在线段segment上
@@ -389,6 +389,13 @@ abstract class HexagonMenuItem {
     }
 
     /**
+     * See if point (x,y) is inside hexagon.<p/>
+     *
+     * See if point (x,y) is inside the outer rectangle of hexagon.<br/>
+     * Pick a ray going from this point through another point which outside the hexagon.
+     * Then calculate the intersections of this ray and each side of hexagon.
+     * If the number of intersections is 1, then this point (x,y) is inside hexagon and return true,
+     * otherwise, return false.
      * 判断点(x,y)是否在六边形内
      * @param x
      * @param y
@@ -402,7 +409,7 @@ abstract class HexagonMenuItem {
         //计算经过点(x,y)的射线与六边形每条边的交点总和
         int count = 0;
         Point intersection;
-        //取一条平行于x轴的射线
+        //取一条(平行于x轴的)射线
         Point point = new Point(x, y);
         Point end = new Point(outer.right + 10, y);
         for(int i = 0; i < points.length; i++){
@@ -417,7 +424,6 @@ abstract class HexagonMenuItem {
             }
         }
         //若交点数为1，则在六边形内，否则在外部
-//        Log.v("whp", "c " + count);
         return count == 1;
     }
 

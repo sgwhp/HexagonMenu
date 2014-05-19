@@ -9,6 +9,7 @@
     tools:context="cn.robust.hexagon.MainActivity">
 
     <cn.robust.hexagon.library.menu.HexagonMenu
+        android:id="@+id/menu"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@color/hexa_bg"/>

@@ -28,9 +28,11 @@ public class HexagonMenu extends View {
     public static final int ITEM_POS_LEFT = 5;
     public static final int ITEM_POS_TOP_LEFT = 6;
     private ArrayList<HexagonMenuItem> items = new ArrayList<HexagonMenuItem>();
-    /**接收了触摸事件的menuItem*/
+    /**the menuItem which has intercepted the touch event*/
     private HexagonMenuItem touchedMenuItem;
     private OnMenuItemClickedListener mListener;
+    /**六边形边长，用户自定义，不为0时，onMeasure会以此数据作为六边形的边长*/
+    private int itemLength;
 
     public HexagonMenu(Context context) {
         super(context);
@@ -62,27 +64,36 @@ public class HexagonMenu extends View {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
-        int measuredHeight =MeasureSpec.getSize(heightMeasureSpec);
-        int wMode = MeasureSpec.getMode(widthMeasureSpec);
-        int hMode = MeasureSpec.getMode(heightMeasureSpec);
-        float r;//六边形边长
+        float r;//length of hexagon
+        int measuredWidth;
+        int measuredHeight;
         float wMargin = getPaddingRight() + getPaddingLeft() + 4 * margin;
         float hMargin = getPaddingBottom() + getPaddingTop() + 3 * margin;
-        //除去边距后实际的宽度
-        float actualWidth = measuredWidth - wMargin;
-        //除去边距后实际的高度
-        float actualHeight = measuredHeight - hMargin;
-        float ratio = (actualWidth * 5f) / (actualHeight * 5.2f);
-        if(ratio < 1){
-            r = actualWidth / 5.2f;
-            if(hMode == MeasureSpec.AT_MOST){
-                measuredHeight = (int) (measuredHeight * ratio + hMargin);
-            }
+        if(itemLength != 0){
+            //item's length has been set manually, so, just use this length to measure menu's size
+            r = itemLength;
+            measuredWidth = (int)(itemLength * 5.2f + wMargin);
+            measuredHeight = (int)(itemLength * 5 + hMargin);
         } else {
-            r = actualHeight / 5.0f;
-            if(wMode == MeasureSpec.AT_MOST){
-                measuredWidth = (int) (measuredWidth / ratio + wMargin);
+            measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
+            measuredHeight = MeasureSpec.getSize(heightMeasureSpec);
+            int wMode = MeasureSpec.getMode(widthMeasureSpec);
+            int hMode = MeasureSpec.getMode(heightMeasureSpec);
+            //除去边距后实际的宽度
+            float actualWidth = measuredWidth - wMargin;
+            //除去边距后实际的高度
+            float actualHeight = measuredHeight - hMargin;
+            float ratio = (actualWidth * 5f) / (actualHeight * 5.2f);
+            if (ratio < 1) {
+                r = actualWidth / 5.2f;
+                if (hMode == MeasureSpec.AT_MOST) {
+                    measuredHeight = (int) (measuredHeight * ratio + hMargin);
+                }
+            } else {
+                r = actualHeight / 5.0f;
+                if (wMode == MeasureSpec.AT_MOST) {
+                    measuredWidth = (int) (measuredWidth / ratio + wMargin);
+                }
             }
         }
         setMeasuredDimension(measuredWidth, measuredHeight);
@@ -94,42 +105,6 @@ public class HexagonMenu extends View {
 
     private void init(Context context) {
         margin = Util.dip2px(context, MARGIN);
-        //center
-        HexagonMenuItem menuItem = new MenuItemCenter(this.getContext());
-        menuItem.setIcon(R.drawable.menu_forum);
-        menuItem.setTextColor(Color.BLACK);
-        menuItem.setText("论坛");
-        items.add(menuItem);
-        //top-right
-        menuItem = new MenuItemTopRight(this.getContext());
-        menuItem.setIcon(R.drawable.menu_torrent);
-        menuItem.setText("种子");
-        items.add(menuItem);
-        //right
-        menuItem = new MenuItemRight(this.getContext());
-        menuItem.setIcon(R.drawable.menu_remote);
-        menuItem.setText("远程控制");
-        items.add(menuItem);
-        //bottom-right
-        menuItem = new MenuItemBottomRight(this.getContext());
-        menuItem.setIcon(R.drawable.menu_exit);
-        menuItem.setText("退出");
-        items.add(menuItem);
-        //bottom-left
-        menuItem = new MenuItemBottomLeft(this.getContext());
-        menuItem.setIcon(R.drawable.menu_setting);
-        menuItem.setText("设置");
-        items.add(menuItem);
-        //left
-        menuItem = new MenuItemLeft(this.getContext());
-        menuItem.setIcon(R.drawable.menu_message);
-        menuItem.setText("消息中心");
-        items.add(menuItem);
-        //top-left
-        menuItem = new MenuItemTopLeft(this.getContext());
-        menuItem.setIcon(R.drawable.menu_help);
-        menuItem.setText("帮助");
-        items.add(menuItem);
     }
 
     @Override
@@ -197,19 +172,14 @@ public class HexagonMenu extends View {
         }
     }
 
-    public HexagonMenuItem add(int position, int icon, int text){
+    public HexagonMenuItem add(int position){
         HexagonMenuItem item = createMenuItem(position);
-        item.setIcon(icon);
-        item.setText(text);
         items.add(item);
         return item;
     }
 
-    public HexagonMenuItem add(int position, Bitmap icon, String text){
-        HexagonMenuItem item = createMenuItem(position);
-        item.setIcon(icon);
-        item.setText(text);
-        items.add(item);
-        return item;
+    public void setItemLength(int length){
+        itemLength = length;
     }
+
 }
