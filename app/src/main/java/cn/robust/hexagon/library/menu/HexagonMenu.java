@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -15,9 +16,15 @@ import cn.robust.hexagon.Util;
 import cn.robust.hexagon.library.OnMenuItemClickedListener;
 
 /**
+ * This view must not wrap by RelativeLayout or the onMeasure will work improperly.<br/>
+ * Using FrameLayout and make sure this view is the only child is recommended.<br/>
+ * @see http://stackoverflow.com/questions/10888466/onmeasure-being-passed-measurespec-exactly-apparently-wrongly
+ * @see http://stackoverflow.com/questions/10510371/fill-remaining-space-with-fixed-aspect-ratio-surfaceview/10522282#10522282
+ * <p/>
  * Created by robust on 2014-04-25.
  */
 public class HexagonMenu extends View {
+    public static final float SQRT_3 = (float)Math.sqrt(3);
     private static final float MARGIN = 8;//dp
     public static float margin;//px
     public static final int ITEM_POS_CENTER = 0;
@@ -68,7 +75,7 @@ public class HexagonMenu extends View {
         int measuredWidth;
         int measuredHeight;
         float wMargin = getPaddingRight() + getPaddingLeft() + 4 * margin;
-        float hMargin = getPaddingBottom() + getPaddingTop() + 3 * margin;
+        float hMargin = getPaddingBottom() + getPaddingTop() + (2 + SQRT_3) * margin;
         if(itemLength != 0){
             //item's length has been set manually, so, just use this length to measure menu's size
             r = itemLength;
@@ -79,6 +86,7 @@ public class HexagonMenu extends View {
             measuredHeight = MeasureSpec.getSize(heightMeasureSpec);
             int wMode = MeasureSpec.getMode(widthMeasureSpec);
             int hMode = MeasureSpec.getMode(heightMeasureSpec);
+            System.out.println(wMode + "," + hMode);
             //除去边距后实际的宽度
             float actualWidth = measuredWidth - wMargin;
             //除去边距后实际的高度
@@ -87,19 +95,31 @@ public class HexagonMenu extends View {
             if (ratio < 1) {
                 r = actualWidth / 5.2f;
                 if (hMode == MeasureSpec.AT_MOST) {
-                    measuredHeight = (int) (measuredHeight * ratio + hMargin);
+                    measuredHeight = (int) (actualHeight * ratio + hMargin);
                 }
             } else {
                 r = actualHeight / 5.0f;
                 if (wMode == MeasureSpec.AT_MOST) {
-                    measuredWidth = (int) (measuredWidth / ratio + wMargin);
+                    measuredWidth = (int) (actualWidth / ratio + wMargin);
                 }
             }
         }
         setMeasuredDimension(measuredWidth, measuredHeight);
+//        int right = 0;
+//        int bottom = 0;
+//        Rect rect;
         for(HexagonMenuItem item : items){
             item.onMeasure(measuredWidth / 2, measuredHeight / 2, r, margin);
+//            rect = item.outer;
+//            if(rect.right > right){
+//                right = rect.right;
+//            }
+//            if(rect.bottom > bottom){
+//                bottom = rect.bottom;
+//            }
         }
+//        setMeasuredDimension(right + (int)(getPaddingRight() + getPaddingLeft() + margin)
+//                , bottom + (int)(getPaddingBottom() + getPaddingTop() + margin));
     }
 
 

@@ -208,6 +208,9 @@ public abstract class HexagonMenuItem {
     }
 
     public void onMeasure(float x, float y, float length, float margin){
+//        if(mLength != 0){
+//            return;
+//        }
         genCenterPoint(x, y, length, margin);
         this.mLength = length;
         x = center.x;
