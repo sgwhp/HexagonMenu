@@ -3,15 +3,13 @@ package cn.robust.hexagon.library.menu;
 import android.content.Context;
 import android.graphics.Color;
 
-import cn.robust.hexagon.R;
-
 
 /**
  * Created by robust on 2014-04-27.
  */
 public class MenuItemCenter extends HexagonMenuItem {
-    MenuItemCenter(Context context){
-        super(context);
+    MenuItemCenter(Context context, HexagonMenu menu){
+        super(context, menu, HexagonMenu.ITEM_POS_CENTER);
         setBackgroundColor(Color.rgb(224, 227, 220));
     }
 

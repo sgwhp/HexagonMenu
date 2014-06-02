@@ -15,6 +15,8 @@ import android.text.BoringLayout;
 import android.text.Layout;
 import android.text.TextPaint;
 import android.text.TextUtils;
+import android.util.FloatMath;
+import android.view.View;
 
 import cn.robust.hexagon.Util;
 import cn.robust.hexagon.library.Point;
@@ -28,46 +30,49 @@ import cn.robust.hexagon.library.Point;
  *        3
  * Created by robust on 2014-04-25.
  */
-public abstract class HexagonMenuItem {
+public class HexagonMenuItem {
     public static final float SQRT_3 = (float)Math.sqrt(3);
+    static final int PADDING = 5;//dp
+    static int mPadding;//px
     private static final float precision = 1f;//精度
+    static final int AXIS_Y_SHIFT = 16;
     protected Context mContext;
-    protected int mId;
+    protected int mPosition;
     private Paint mPaint;
     protected Point center = new Point();
-    private float mLength;
+    float mLength;
     protected Point[] points = new Point[6];
     protected Point[] pressedPoints = new Point[6];
     protected Path mPath = new Path();
     protected Path mPressedPath = new Path();
     protected Rect outer;
     protected String mText;
-    private int mTextColor = Color.WHITE;
+    private int mTextColor = Color.BLACK;
     private TextPaint mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-    private static final float TEXT_SIZE = 16;
+    private static final float TEXT_SIZE = 14;
     private float mTextSize;
     private BoringLayout mLayout;
     protected Bitmap mIcon;
+    private Matrix iconMatrix = new Matrix();
     /**背景图片*/
     protected Bitmap backgroundImg;
     protected BitmapShader mShader;
-    private int backgroundColor;
     private Matrix bgMatrix;
     private Matrix bgPressedMatrix;
     protected boolean pressed;
     private HexagonMenu mMenu;
+    static int measuredWidthMode = View.MeasureSpec.EXACTLY;
+    static int measureHeightMode = View.MeasureSpec.EXACTLY;
 
-    HexagonMenuItem(Context context){
+    HexagonMenuItem(Context context, HexagonMenu menu, int position){
         mContext = context;
+        mMenu = menu;
+        this.mPosition = position;
         init();
     }
 
-    public void attach(HexagonMenu menu){
-        mMenu = menu;
-    }
-
-    public int getId(){
-        return mId;
+    public int getPosition(){
+        return mPosition;
     }
 
     public String getText(){
@@ -83,11 +88,16 @@ public abstract class HexagonMenuItem {
      * @param text
      */
     public void setText(String text){
-        mText = text;
-        mTextPaint.setTextSize(mTextSize);
-        mTextPaint.setColor(mTextColor);
-        if(outer != null){
-            initText();
+        if((measuredWidthMode != View.MeasureSpec.EXACTLY
+                || measureHeightMode != View.MeasureSpec.EXACTLY)
+                && mText != null && mTextPaint.measureText(mText) < mTextPaint.measureText(text)){
+            mText = text;
+            mMenu.requestLayout();
+        } else {
+            mText = text;
+            if (outer != null) {
+                initText();
+            }
         }
     }
 
@@ -107,9 +117,16 @@ public abstract class HexagonMenuItem {
     }
 
     public void setTextSize(float textSize) {
-        this.mTextSize = textSize;
-        if(mTextPaint != null){
+        if(textSize != mTextSize && (measuredWidthMode != View.MeasureSpec.EXACTLY
+                || measureHeightMode != View.MeasureSpec.EXACTLY)){
+            this.mTextSize = textSize;
             mTextPaint.setTextSize(textSize);
+            mMenu.requestLayout();
+        } else {
+            this.mTextSize = textSize;
+            mTextPaint.setTextSize(textSize);
+            initText();
+            mMenu.invalidate();
         }
     }
 
@@ -133,9 +150,13 @@ public abstract class HexagonMenuItem {
     }
 
     public void setIcon(Bitmap icon) {
-        this.mIcon = icon;
-        if(mLength != 0){
+        mIcon = icon;
+        if(measuredWidthMode != View.MeasureSpec.EXACTLY
+                || measureHeightMode != View.MeasureSpec.EXACTLY){
+            mMenu.requestLayout();
+        } else {
             initIcon();
+            mMenu.invalidate();
         }
     }
 
@@ -143,14 +164,16 @@ public abstract class HexagonMenuItem {
      * 初始化icon的大小等参数
      */
     private void initIcon(){
-        float scaleWidth = mLength / mIcon.getWidth();
-        float scaleHeight = mLength / mIcon.getHeight();
-        float scale = scaleWidth > scaleHeight ? scaleHeight : scaleWidth;
-        //设置icon的大小为六边形边长的0.75
-        scale *= 0.75f;
-        Matrix matrix = new Matrix();
-        matrix.postScale(scale, scale);
-        mIcon = Bitmap.createBitmap(mIcon, 0, 0, mIcon.getWidth(), mIcon.getHeight(), matrix, true);
+        float scaleWidth = (mLength * SQRT_3 - mPadding * 2) / mIcon.getWidth();
+        float height = mText == null ? 0 : mTextSize;// + mPadding;
+        height = mLength - height;
+        float scaleHeight = height / mIcon.getHeight();
+        float scale = Math.min(scaleWidth, scaleHeight);
+        iconMatrix.reset();
+        iconMatrix.postScale(scale, scale);
+        iconMatrix.postTranslate(center.x - mIcon.getWidth() * scale * 0.5f
+                , center.y - mIcon.getHeight() * scale - mLength / 2 + height);
+//        mIcon = Bitmap.createBitmap(mIcon, 0, 0, mIcon.getWidth(), mIcon.getHeight(), iconMatrix, true);
     }
 
     public void setBackgroundImg(int resId){
@@ -158,10 +181,15 @@ public abstract class HexagonMenuItem {
     }
 
     public void setBackgroundImg(Bitmap img){
-        backgroundImg = img;
-        mShader = new BitmapShader(backgroundImg, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
-        if(outer != null){
+        mShader = new BitmapShader(img, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
+        if((img.getWidth() > backgroundImg.getHeight() || img.getHeight() > backgroundImg.getHeight())
+                && (measuredWidthMode != View.MeasureSpec.EXACTLY
+                || measureHeightMode != View.MeasureSpec.EXACTLY)){
+            backgroundImg = img;
+            mMenu.requestLayout();
+        } else if(outer != null){
             initBgImg();
+            mMenu.invalidate();
         }
     }
 
@@ -185,36 +213,53 @@ public abstract class HexagonMenuItem {
         mPaint.setShader(mShader);
     }
 
-    public int getBackgroundColor() {
-        return backgroundColor;
-    }
-
     public void setBackgroundColor(int backgroundColor) {
-        this.backgroundColor = backgroundColor;
         mPaint.setColor(backgroundColor);
         mShader = null;
         mPaint.setShader(null);
+        mMenu.invalidate();
     }
 
     private void init(){
-        mTextSize = Util.dip2px(mContext, TEXT_SIZE);
-        mPaint = new Paint();
-        mPaint.setColor(backgroundColor);
-        mPaint.setAntiAlias(true);
+        mTextSize = Util.sp2px(mContext, TEXT_SIZE);
+        mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        mPaint.setColor(Color.WHITE);
+        mTextPaint.setTextSize(mTextSize);
+        mTextPaint.setColor(mTextColor);
         for(int i = 0; i < 6; i++){
             points[i] = new Point();
             pressedPoints[i] = new Point();
         }
     }
 
-    public void onMeasure(float x, float y, float length, float margin){
-//        if(mLength != 0){
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec){
+        float desireWidth = 0;
+        float desireHeight = 0;
+        if(mIcon != null){
+            desireWidth = mIcon.getWidth();
+            desireHeight = mIcon.getHeight();
+        }
+        if(mText != null){
+            desireWidth = Math.max(desireWidth, mTextPaint.measureText(mText));
+            desireHeight += mTextSize;// + mPadding;
+        }
+        desireWidth += 2 * mPadding;
+//        desireHeight += 2 * mPadding;
+        if(backgroundImg != null){
+            desireWidth = Math.max(desireWidth, backgroundImg.getWidth());
+            desireHeight = Math.max(desireHeight, backgroundImg.getHeight());
+        }
+        mLength = Math.max(desireWidth / SQRT_3, desireHeight);
+    }
+
+    protected void onLayout(boolean changed, float length, int paddingLeft, int paddingTop){
+        mLength = length;
+//        if(!changed){
 //            return;
 //        }
-        genCenterPoint(x, y, length, margin);
-        this.mLength = length;
-        x = center.x;
-        y = center.y;
+        genCenterPoint(paddingLeft, paddingTop);
+        float x = center.x;
+        float y = center.y;
         float tmp2 = length / 2;
         float tmp1 = SQRT_3 * tmp2;
         float tmp3 = tmp2 * 0.9f;
@@ -255,7 +300,14 @@ public abstract class HexagonMenuItem {
         }
     }
 
-    protected void genCenterPoint(float x, float y, float length, float margin){center.set(x, y);}
+    protected void genCenterPoint(int paddingLeft, int paddingTop){
+        int horizontalPos = mPosition & 0xffff;
+        int verticalPos = mPosition >>> AXIS_Y_SHIFT;
+        center.set((horizontalPos + 1) * SQRT_3 * mLength / 2
+                + horizontalPos / 2.0f * mPadding + paddingLeft
+                , (verticalPos + 1)* mLength + verticalPos * mLength / 2
+                + verticalPos * mPadding * SQRT_3 / 2 + paddingTop);
+    }
 
     protected void draw(Canvas canvas){
         if(!pressed){
@@ -271,25 +323,16 @@ public abstract class HexagonMenuItem {
             }
             canvas.drawPath(mPressedPath, mPaint);
         }
-        //y坐标相对于中心点的y坐标偏移量，避免icon和文字同时出现时重合，并且保证单独出现时能够居中
-        float margin = 0;
+        float offset = 0;
         if(mIcon != null){
             // draw icon
-            if(mLayout != null && (margin = mLength / 2 - mIcon.getHeight() / 2 - mLayout.getHeight()) > 0){
-                margin = 0;
-            }
-            canvas.drawBitmap(mIcon, center.x - mIcon.getWidth() / 2
-                    , center.y - mIcon.getHeight() / 2 + margin, mPaint);
+            canvas.drawBitmap(mIcon, iconMatrix, mPaint);
+            offset = mLength / 2;
         }
         if(mLayout != null){
             //draw text
-            if(mIcon != null){
-                margin = mIcon.getHeight() / 2 + margin;
-            } else {
-                margin = -mLayout.getHeight() / 2;
-            }
             canvas.save();
-            canvas.translate(outer.left, center.y + margin);
+            canvas.translate(outer.left, center.y + offset - mTextSize);
             mLayout.draw(canvas);
             canvas.restore();
         }
@@ -369,19 +412,19 @@ public abstract class HexagonMenuItem {
                 x = rayEnd.x;
             }
         }
-        double result = Math.sqrt(dsx * dsx  + dsy * dsy) -
-                Math.sqrt((segmentEnd.x - x) * (segmentEnd.x - x)
+        float result = FloatMath.sqrt(dsx * dsx + dsy * dsy) -
+                FloatMath.sqrt((segmentEnd.x - x) * (segmentEnd.x - x)
                         + (segmentEnd.y - y) * (segmentEnd.y - y))
-                - Math.sqrt((segmentStart.x - x) * (segmentStart.x - x)
+                - FloatMath.sqrt((segmentStart.x - x) * (segmentStart.x - x)
                 + (segmentStart.y - y) * (segmentStart.y - y));
         //判断交点是否在线段（六边形的边）上
         if(result < -precision){
             return null;
         }
-        result = Math.sqrt(drx * drx  + dry * dry) -
-                Math.sqrt((rayEnd.x - x) * (rayEnd.x - x)
+        result = FloatMath.sqrt(drx * drx  + dry * dry) -
+                FloatMath.sqrt((rayEnd.x - x) * (rayEnd.x - x)
                         + (rayEnd.y - y) * (rayEnd.y - y))
-                - Math.sqrt((rayStart.x - x) * (rayStart.x - x)
+                - FloatMath.sqrt((rayStart.x - x) * (rayStart.x - x)
                 + (rayStart.y - y) * (rayStart.y - y));
         //判断交点是否在射线上
         if(result > -precision){
@@ -394,7 +437,7 @@ public abstract class HexagonMenuItem {
     /**
      * See if point (x,y) is inside hexagon.<p/>
      *
-     * See if point (x,y) is inside the outer rectangle of hexagon.<br/>
+     * See if point (x,y) is inside the outer rectangle of hexagon, first.<br/>
      * Pick a ray going from this point through another point which outside the hexagon.
      * Then calculate the intersections of this ray and each side of hexagon.
      * If the number of intersections is 1, then this point (x,y) is inside hexagon and return true,

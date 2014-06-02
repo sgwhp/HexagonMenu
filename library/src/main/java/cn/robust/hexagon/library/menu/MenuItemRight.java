@@ -3,16 +3,14 @@ package cn.robust.hexagon.library.menu;
 import android.content.Context;
 import android.graphics.Color;
 
-import cn.robust.hexagon.R;
-import cn.robust.hexagon.library.Point;
-
 /**
  * Created by robust on 2014-04-27.
  */
 class MenuItemRight extends HexagonMenuItem {
-    MenuItemRight(Context context) {
-        super(context);
+    MenuItemRight(Context context, HexagonMenu menu) {
+        super(context, menu, HexagonMenu.ITEM_POS_RIGHT);
         setBackgroundColor(Color.rgb(156, 89, 184));
+        setTextColor(Color.WHITE);
     }
 
 //    @Override
@@ -27,9 +25,9 @@ class MenuItemRight extends HexagonMenuItem {
 //        super.init(x, y, hexWidth, length, marginX, marginY);
 //    }
 
-    @Override
-    protected void genCenterPoint(float x, float y, float length, float margin) {
-        center.x = x + SQRT_3 * length + margin;
-        center.y = y;
-    }
+//    @Override
+//    protected void genCenterPoint(float x, float y, float length, float margin) {
+//        center.x = x + SQRT_3 * length + margin;
+//        center.y = y;
+//    }
 }
