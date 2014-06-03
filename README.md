@@ -3,14 +3,14 @@
 
 HexagonMenu is an implementation of two designs from Dribbble [Menu Concept (iOS)][1] and [Hexagonal flat menu][2].
 
-<img src="http://git.oschina.net/robust/HexagonMenu/tree/master/screenshot/screenshot_01.png" width="320" height="568" />
-<img src="http://git.oschina.net/robust/HexagonMenu/tree/master/screenshot/screenshot_02.png" width="320" height="568" />
+<img src="http://git.oschina.net/robust/HexagonMenu/raw/master/screenshot/screenshot_01.png" width="320" height="568" />
+<img src="http://git.oschina.net/robust/HexagonMenu/raw/master/screenshot/screenshot_02.png" width="320" height="568" />
 
 ## Usage
 1.About the position of menu item.
   Check out those coordinates in the following screenshot.
 
-  <img src="http://git.oschina.net/robust/HexagonMenu/tree/master/screenshot/screenshot_03.png" width="320" height="568" />
+  <img src="http://git.oschina.net/robust/HexagonMenu/raw/master/screenshot/screenshot_03.png" width="320" height="568" />
 
 2.About gravity.
   The same with TextView unless it can not be top|bottom or left|right. Use match_parent instead.
