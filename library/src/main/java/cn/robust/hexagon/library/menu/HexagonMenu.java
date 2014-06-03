@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
+import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -31,7 +32,8 @@ public class HexagonMenu extends View {
     public static final int ITEM_POS_BOTTOM_LEFT = 0x00020001;
     public static final int ITEM_POS_LEFT = 0x00010000;
     public static final int ITEM_POS_TOP_LEFT = 0x00000001;
-    private ArrayList<HexagonMenuItem> items = new ArrayList<HexagonMenuItem>();
+//    private ArrayList<HexagonMenuItem> items = new ArrayList<HexagonMenuItem>();
+    private SparseArray<HexagonMenuItem> items = new SparseArray<HexagonMenuItem>();
     /**the menuItem which has intercepted the touch event*/
     private HexagonMenuItem touchedMenuItem;
     private OnMenuItemClickedListener mListener;
@@ -83,7 +85,9 @@ public class HexagonMenu extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        for(HexagonMenuItem item : items){
+        HexagonMenuItem item;
+        for(int i = 0; i < items.size(); i++){
+            item = items.get(items.keyAt(i));
             item.draw(canvas);
         }
     }
@@ -103,7 +107,9 @@ public class HexagonMenu extends View {
         int minVer = Integer.MAX_VALUE;
         int maxVer = Integer.MIN_VALUE;
         int tmp;
-        for(HexagonMenuItem item : items){
+        HexagonMenuItem item;
+        for(int i = 0; i < items.size(); i++){
+            item = items.get(items.keyAt(i));
             item.onMeasure(widthMeasureSpec, heightMeasureSpec);
             itemLength = Math.max(itemLength, item.mLength);
             tmp = item.mPosition & 0xffff;
@@ -140,7 +146,7 @@ public class HexagonMenu extends View {
         float ratio = (actualWidth * verMultiple) / (actualHeight * horMultiple);
         if (ratio < 1) {
             itemLength = actualWidth / horMultiple;
-            if (hMode == MeasureSpec.AT_MOST) {
+            if (hMode != MeasureSpec.EXACTLY) {
                 measuredHeight = (int) (actualHeight * ratio + hMargin);
             } else {
                 while(true) {
@@ -162,7 +168,7 @@ public class HexagonMenu extends View {
             }
         } else {
             itemLength = actualHeight / verMultiple;
-            if (wMode == MeasureSpec.AT_MOST) {
+            if (wMode != MeasureSpec.EXACTLY) {
                 measuredWidth = (int) (actualWidth / ratio + wMargin);
             } else {
                 while (true){
@@ -189,7 +195,9 @@ public class HexagonMenu extends View {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        for(HexagonMenuItem item : items){
+        HexagonMenuItem item;
+        for(int i = 0; i < items.size(); i++){
+            item = items.get(items.keyAt(i));
             item.onLayout(changed, itemLength, offsetWidth, offsetHeight);
         }
     }
@@ -202,7 +210,9 @@ public class HexagonMenu extends View {
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
-                for(HexagonMenuItem item : items){
+                HexagonMenuItem item = null;
+                for(int i = 0; i < items.size(); i++){
+                    item = items.get(items.keyAt(i));
                     if(item.isInsideHexagon(event.getX(), event.getY())){
                         touchedMenuItem = item;
                         touchedMenuItem.setPressed(true);
@@ -263,10 +273,20 @@ public class HexagonMenu extends View {
         }
     }
 
+    /**
+     * if the menu item with this position has already existed, the old one will be removed.
+     * @param position
+     * @return
+     */
     public HexagonMenuItem add(int position){
         HexagonMenuItem item = createMenuItem(position);
-        items.add(item);
+        items.put(position, item);
         return item;
+    }
+
+    public void remove(int position){
+        items.remove(position);
+        requestLayout();
     }
 
     /**

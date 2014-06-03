@@ -108,8 +108,8 @@ public class HexagonMenuItem {
             metrics = BoringLayout.isBoring("boring layout sucks", mTextPaint);
             metrics.width = outer.width();
         }
-        mLayout = new BoringLayout(mText, mTextPaint, outer.width(), Layout.Alignment.ALIGN_CENTER
-                , 1.0f, 0f, metrics, true, TextUtils.TruncateAt.END, outer.width());
+        mLayout = new BoringLayout(mText, mTextPaint, outer.width() - mPadding, Layout.Alignment.ALIGN_CENTER
+                , 1.0f, 0f, metrics, true, TextUtils.TruncateAt.END, outer.width() - mPadding);
     }
 
     public float getTextSize() {
@@ -182,14 +182,18 @@ public class HexagonMenuItem {
 
     public void setBackgroundImg(Bitmap img){
         mShader = new BitmapShader(img, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
-        if((img.getWidth() > backgroundImg.getHeight() || img.getHeight() > backgroundImg.getHeight())
+        if(backgroundImg != null && (img.getWidth() > backgroundImg.getHeight()
+                || img.getHeight() > backgroundImg.getHeight())
                 && (measuredWidthMode != View.MeasureSpec.EXACTLY
                 || measureHeightMode != View.MeasureSpec.EXACTLY)){
             backgroundImg = img;
             mMenu.requestLayout();
-        } else if(outer != null){
-            initBgImg();
-            mMenu.invalidate();
+        } else{
+            backgroundImg = img;
+            if(outer != null) {
+                initBgImg();
+                mMenu.invalidate();
+            }
         }
     }
 
@@ -202,8 +206,8 @@ public class HexagonMenuItem {
         bgMatrix.postScale(outer.width() / (float) backgroundImg.getWidth(),
                 outer.height() / (float) backgroundImg.getHeight(),
                 backgroundImg.getWidth() / 2, backgroundImg.getHeight() / 2);
-        bgPressedMatrix.postScale(outer.width() / (float) backgroundImg.getWidth() * 0.9f,
-                outer.height() / (float) backgroundImg.getHeight() * 0.9f,
+        bgPressedMatrix.postScale(outer.width() / 0.9f / backgroundImg.getWidth(),
+                outer.height() / 0.9f / backgroundImg.getHeight(),
                 backgroundImg.getWidth() / 2, backgroundImg.getHeight() / 2);
         bgMatrix.postTranslate(center.x - backgroundImg.getWidth() / 2,
                 center.y - backgroundImg.getHeight() / 2);
@@ -240,7 +244,7 @@ public class HexagonMenuItem {
             desireHeight = mIcon.getHeight();
         }
         if(mText != null){
-            desireWidth = Math.max(desireWidth, mTextPaint.measureText(mText));
+            desireWidth = Math.max(desireWidth, mTextPaint.measureText(mText) + mPadding * 2);
             desireHeight += mTextSize;// + mPadding;
         }
         desireWidth += 2 * mPadding;
@@ -327,12 +331,12 @@ public class HexagonMenuItem {
         if(mIcon != null){
             // draw icon
             canvas.drawBitmap(mIcon, iconMatrix, mPaint);
-            offset = mLength / 2;
+            offset = mLength / 2 - mTextSize / 2;
         }
         if(mLayout != null){
             //draw text
             canvas.save();
-            canvas.translate(outer.left, center.y + offset - mTextSize);
+            canvas.translate(outer.left, center.y + offset - mTextSize / 2);
             mLayout.draw(canvas);
             canvas.restore();
         }
