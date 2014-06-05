@@ -9,7 +9,8 @@ import android.graphics.Color;
 public class MenuItemTopLeft extends HexagonMenuItem {
     MenuItemTopLeft(Context context, HexagonMenu menu) {
         super(context, menu, HexagonMenu.ITEM_POS_TOP_LEFT);
-        setBackgroundColor(Color.rgb(27, 188, 157));
+//        setBackgroundColor(Color.rgb(27, 188, 157));
+        setBackgroundColor(Color.rgb(149, 204, 107));
         setTextColor(Color.WHITE);
     }
 

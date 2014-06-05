@@ -32,7 +32,6 @@ public class HexagonMenu extends View {
     public static final int ITEM_POS_BOTTOM_LEFT = 0x00020001;
     public static final int ITEM_POS_LEFT = 0x00010000;
     public static final int ITEM_POS_TOP_LEFT = 0x00000001;
-//    private ArrayList<HexagonMenuItem> items = new ArrayList<HexagonMenuItem>();
     private SparseArray<HexagonMenuItem> items = new SparseArray<HexagonMenuItem>();
     /**the menuItem which has intercepted the touch event*/
     private HexagonMenuItem touchedMenuItem;
