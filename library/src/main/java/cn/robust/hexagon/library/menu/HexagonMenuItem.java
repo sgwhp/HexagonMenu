@@ -244,7 +244,7 @@ public class HexagonMenuItem {
             desireHeight = mIcon.getHeight();
         }
         if(mText != null){
-            desireWidth = Math.max(desireWidth, mTextPaint.measureText(mText) + mPadding * 2);
+            desireWidth = Math.max(desireWidth, mTextPaint.measureText(mText));
             desireHeight += mTextSize;// + mPadding;
         }
         desireWidth += 2 * mPadding;
@@ -347,7 +347,7 @@ public class HexagonMenuItem {
      * 判断点(x,y)是否在六边形的外接矩形内
      * @param x
      * @param y
-     * @return
+     * @return true if it's inside the hexagon's outer rectangle, otherwise, return false;
      */
     public boolean isInsideOuter(float x, float y){
         if(x >= outer.left && x <= outer.right && y >= outer.top && y <= outer.bottom){
@@ -449,7 +449,7 @@ public class HexagonMenuItem {
      * 判断点(x,y)是否在六边形内
      * @param x
      * @param y
-     * @return
+     * @return true if it's inside hexagon, otherwise false
      */
     public boolean isInsideHexagon(float x, float y){
         //先判断是否在六边形的外接矩形内

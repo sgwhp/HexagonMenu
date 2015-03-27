@@ -9,8 +9,6 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 
-import java.util.ArrayList;
-
 import cn.robust.hexagon.R;
 import cn.robust.hexagon.Util;
 import cn.robust.hexagon.library.OnMenuItemClickedListener;
@@ -106,11 +104,16 @@ public class HexagonMenu extends View {
         int minVer = Integer.MAX_VALUE;
         int maxVer = Integer.MIN_VALUE;
         int tmp;
+        int itemLengthMeasureByWidth;
+        int itemLengthMeasureByHeight;
         HexagonMenuItem item;
+        itemLength = 0;
         for(int i = 0; i < items.size(); i++){
             item = items.get(items.keyAt(i));
-            item.onMeasure(widthMeasureSpec, heightMeasureSpec);
-            itemLength = Math.max(itemLength, item.mLength);
+            if(wMode != MeasureSpec.EXACTLY || hMode != MeasureSpec.EXACTLY) {
+                item.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                itemLength = Math.max(itemLength, item.mLength);
+            }
             tmp = item.mPosition & 0xffff;
             minHor = Math.min(minHor, tmp);
             maxHor = Math.max(maxHor, tmp);
@@ -125,66 +128,62 @@ public class HexagonMenu extends View {
         //除去边距后实际的宽度
         float actualWidth = measuredWidth - wMargin;
         float horMultiple = (maxHor - minHor + 2) * SQRT_3 / 2;
-        float desireWidth = itemLength * horMultiple;
+        float desireWidth = actualWidth;
         //除去边距后实际的高度
         float actualHeight = measuredHeight - hMargin;
         float verMultiple = (maxVer - minVer + 1) * 1.5f + 0.5f;
-        float desireHeight = itemLength * verMultiple;
+        float desireHeight = actualHeight;
         offsetWidth = (int)(getPaddingLeft() - minHor * SQRT_3 / 2 * itemLength
                 - minHor * HexagonMenuItem.mPadding / 2);
         offsetHeight = (int)(getPaddingTop() - minVer * 1.5f * itemLength
                 - minVer * SQRT_3 * HexagonMenuItem.mPadding / 2);
-        if(wMode != MeasureSpec.EXACTLY){
+        if(wMode != MeasureSpec.EXACTLY && hMode != MeasureSpec.EXACTLY){
+            desireWidth = itemLength * horMultiple;
             actualWidth = desireWidth;
             measuredWidth = (int)(actualWidth + wMargin);
-        }
-        if(hMode != MeasureSpec.EXACTLY){
+            desireHeight = itemLength * verMultiple;
             actualHeight = desireHeight;
             measuredHeight = (int)(actualHeight + hMargin);
+        } else if(wMode == MeasureSpec.EXACTLY && hMode != MeasureSpec.EXACTLY){
+            desireHeight = itemLength * verMultiple;
+            actualHeight = desireHeight / verMultiple < desireWidth / horMultiple ? desireWidth / horMultiple * verMultiple : desireHeight;
+            measuredHeight = (int)(actualHeight + hMargin);
+        } else if(wMode != MeasureSpec.EXACTLY){
+            desireWidth = itemLength * horMultiple;
+            actualWidth = desireWidth / horMultiple < desireHeight / verMultiple ? desireHeight / verMultiple * horMultiple : desireWidth;
+            measuredWidth = (int)(actualWidth + wMargin);
         }
         float ratio = (actualWidth * verMultiple) / (actualHeight * horMultiple);
         if (ratio < 1) {
             itemLength = actualWidth / horMultiple;
             if (hMode != MeasureSpec.EXACTLY) {
                 measuredHeight = (int) (actualHeight * ratio + hMargin);
-            } else {
-                while(true) {
-                    if((mGravity & (Gravity.AXIS_SPECIFIED << Gravity.AXIS_Y_SHIFT)) != 0) {
-                        offsetHeight += (actualHeight - itemLength * verMultiple) / 2;
-                    } else {
-                        break;
-                    }
-                    if((mGravity & (Gravity.AXIS_PULL_BEFORE << Gravity.AXIS_Y_SHIFT)) != 0){
-                        //top
-                        offsetHeight -= (actualHeight - itemLength * verMultiple) / 2;
-                    }
-                    if((mGravity & (Gravity.AXIS_PULL_AFTER << Gravity.AXIS_Y_SHIFT)) != 0){
-                        //bottom
-                        offsetHeight += (actualHeight - itemLength * verMultiple) / 2;
-                    }
-                    break;
+            } else if ((mGravity & (Gravity.AXIS_SPECIFIED << Gravity.AXIS_Y_SHIFT)) != 0) {
+                offsetHeight += (actualHeight - itemLength * verMultiple) / 2;
+
+                if ((mGravity & (Gravity.AXIS_PULL_BEFORE << Gravity.AXIS_Y_SHIFT)) != 0) {
+                    //top
+                    offsetHeight -= (actualHeight - itemLength * verMultiple) / 2;
+                }
+                if ((mGravity & (Gravity.AXIS_PULL_AFTER << Gravity.AXIS_Y_SHIFT)) != 0) {
+                    //bottom
+                    offsetHeight += (actualHeight - itemLength * verMultiple) / 2;
                 }
             }
         } else {
             itemLength = actualHeight / verMultiple;
             if (wMode != MeasureSpec.EXACTLY) {
                 measuredWidth = (int) (actualWidth / ratio + wMargin);
-            } else {
-                while (true){
-                    if((mGravity & Gravity.AXIS_SPECIFIED) != 0) {
-                        offsetWidth += (actualWidth - itemLength * horMultiple) / 2;
-                    } else {
-                        break;
-                    }
-                    if((mGravity & Gravity.AXIS_PULL_BEFORE) != 0){
-                        //left
-                        offsetWidth -= (actualWidth - itemLength * horMultiple) / 2;
-                    }
-                    if((mGravity & Gravity.AXIS_PULL_AFTER) != 0){
-                        //right
-                        offsetWidth += (actualWidth - itemLength * horMultiple) / 2;
-                    }
-                    break;
+            } else if ((mGravity & Gravity.AXIS_SPECIFIED) != 0) {
+                offsetWidth += (actualWidth - itemLength * horMultiple) / 2;
+
+                if ((mGravity & Gravity.AXIS_PULL_BEFORE) != 0) {
+                    //left
+                    offsetWidth -= (actualWidth - itemLength * horMultiple) / 2;
+                }
+                if ((mGravity & Gravity.AXIS_PULL_AFTER) != 0) {
+                    //right
+                    offsetWidth += (actualWidth - itemLength * horMultiple) / 2;
                 }
             }
         }
@@ -274,8 +273,8 @@ public class HexagonMenu extends View {
 
     /**
      * if the menu item with this position has already existed, the old one will be removed.
-     * @param position
-     * @return
+     * @param position where is the item to be put
+     * @return a new menu item
      */
     public HexagonMenuItem add(int position){
         HexagonMenuItem item = createMenuItem(position);
