@@ -16,12 +16,12 @@ class MenuItemRight extends HexagonMenuItem {
 
 //    @Override
 //    public void init(float x, float y, float hexWidth, float length, float marginX, float marginY) {
-//        points[0] = new Point(x + marginX + hexWidth, y - length);
-//        points[1] = new Point(x + marginX + hexWidth * 1.5f, y - length / 2);
-//        points[2] = new Point(x + marginX + hexWidth * 1.5f, y + length / 2);
-//        points[3] = new Point(x + marginX + hexWidth, y + length);
-//        points[4] = new Point(x + marginX + hexWidth / 2, y + length / 2);
-//        points[5] = new Point(x + marginX + hexWidth / 2, y - length / 2);
+//        vertexes[0] = new Point(x + marginX + hexWidth, y - length);
+//        vertexes[1] = new Point(x + marginX + hexWidth * 1.5f, y - length / 2);
+//        vertexes[2] = new Point(x + marginX + hexWidth * 1.5f, y + length / 2);
+//        vertexes[3] = new Point(x + marginX + hexWidth, y + length);
+//        vertexes[4] = new Point(x + marginX + hexWidth / 2, y + length / 2);
+//        vertexes[5] = new Point(x + marginX + hexWidth / 2, y - length / 2);
 //        backgroundColor = Color.rgb(156, 89, 184);
 //        super.init(x, y, hexWidth, length, marginX, marginY);
 //    }

@@ -10,6 +10,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.Shader;
 import android.text.BoringLayout;
 import android.text.Layout;
@@ -34,15 +35,26 @@ public class HexagonMenuItem {
     public static final float SQRT_3 = (float)Math.sqrt(3);
     static final int PADDING = 5;//dp
     static int mPadding;//px
-    private static final float precision = 1f;//精度
+    private static final float PRECISION = 1f;//精度
     static final int AXIS_Y_SHIFT = 16;
+    private static final int ROUND_RADIUS = 10;
+    private int roundRadius;
     protected Context mContext;
     protected int mPosition;
     private Paint mPaint;
     protected Point center = new Point();
     float mLength;
-    protected Point[] points = new Point[6];
-    protected Point[] pressedPoints = new Point[6];
+    protected Point[] vertexes = new Point[6];
+    protected Point[] vertexesPressed = new Point[6];
+    private Point[] roundVertexes = new Point[12];
+    private Point[] roundVertexesPressed = new Point[12];
+//    // 生成一个圆角半径的圆，圆心在原点
+//    private int[][] circlePoints;
+//    // 45°圆弧的点的数量
+//    private int circlePointsCount;
+    // 每个顶点圆角的圆心
+    private float[][] circleCenter = new float[6][2];
+    private float[][] circleCenterPressed = new float[6][2];
     protected Path mPath = new Path();
     protected Path mPressedPath = new Path();
     protected Rect outer;
@@ -224,16 +236,59 @@ public class HexagonMenuItem {
         mMenu.invalidate();
     }
 
+//    private void genCircle(){
+//        circlePoints = new int[(roundRadius+1)*8][2];
+//        int x = 0;
+//        int y = roundRadius;
+//        int p = 1 - roundRadius;
+//        circlePoints[0][0] = x;
+//        circlePoints[0][1] = y;
+//        while(x <= y){
+//            x++;
+//            if(p < 0){
+//                p += 2 * x + 1;
+//            } else {
+//                y--;
+//                p += 2 * (x - y + 1);
+//            }
+//            circlePoints[x][0] = x;
+//            circlePoints[x][1] = y;
+//        }
+//        circlePointsCount = x + 1;
+//        for(int i = 0; i < circlePointsCount; i++){
+//            circlePoints[circlePointsCount*2-i-1][0] = circlePoints[i][1];
+//            circlePoints[circlePointsCount*2-i-1][1] = circlePoints[i][0];
+//            circlePoints[circlePointsCount*2+i][0] = circlePoints[i][1];
+//            circlePoints[circlePointsCount*2+i][1] = -circlePoints[i][0];
+//            circlePoints[circlePointsCount*4-i-1][0] = circlePoints[i][0];
+//            circlePoints[circlePointsCount*4-i-1][1] = -circlePoints[i][1];
+//            circlePoints[circlePointsCount*4+i][0] = -circlePoints[i][0];
+//            circlePoints[circlePointsCount*4+i][1] = -circlePoints[i][1];
+//            circlePoints[circlePointsCount*6-i-1][0] = -circlePoints[i][1];
+//            circlePoints[circlePointsCount*6-i-1][1] = -circlePoints[i][0];
+//            circlePoints[circlePointsCount*6+i][0] = -circlePoints[i][1];
+//            circlePoints[circlePointsCount*6+i][1] = circlePoints[i][0];
+//            circlePoints[circlePointsCount*8-i-1][0] = -circlePoints[i][0];
+//            circlePoints[circlePointsCount*8-i-1][1] = circlePoints[i][1];
+//        }
+//    }
+
     private void init(){
         mTextSize = Util.sp2px(mContext, TEXT_SIZE);
+        roundRadius = Util.dip2px(mContext, ROUND_RADIUS);
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
         mPaint.setColor(Color.WHITE);
         mTextPaint.setTextSize(mTextSize);
         mTextPaint.setColor(mTextColor);
         for(int i = 0; i < 6; i++){
-            points[i] = new Point();
-            pressedPoints[i] = new Point();
+            vertexes[i] = new Point();
+            vertexesPressed[i] = new Point();
+            roundVertexes[i] = new Point();
+            roundVertexes[6+i] = new Point();
+            roundVertexesPressed[i] = new Point();
+            roundVertexesPressed[6+i] = new Point();
         }
+//        genCircle();
     }
 
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec){
@@ -256,11 +311,99 @@ public class HexagonMenuItem {
         mLength = Math.max(desireWidth / SQRT_3, desireHeight);
     }
 
+    void genPath(){
+        mPath.reset();
+        mPressedPath.reset();
+
+        if(mMenu.roundedCorner) {
+            mPath.moveTo(roundVertexes[3].x, roundVertexes[3].y);
+            RectF rect = new RectF();
+            int k;
+            for(int i = 0, j = 2; i < 6; i++, j++){
+                j = j % 6;
+                k = j * 2 + 1;
+                rect.set(circleCenter[j][0] - roundRadius, circleCenter[j][1] - roundRadius
+                        , circleCenter[j][0] + roundRadius, circleCenter[j][1] + roundRadius);
+                mPath.arcTo(rect, i * 60, 60);
+                mPath.lineTo(roundVertexes[k].x, roundVertexes[k].y);
+                rect.set(circleCenterPressed[j][0] - roundRadius, circleCenterPressed[j][1] - roundRadius
+                        , circleCenterPressed[j][0] + roundRadius, circleCenterPressed[j][1] + roundRadius);
+                mPressedPath.arcTo(rect, i * 60, 60);
+                mPressedPath.lineTo(roundVertexesPressed[k].x, roundVertexesPressed[k].y);
+            }
+//            mPath.moveTo(circlePoints[0][0] + circleCenter[3][0], circlePoints[0][1] + circleCenter[3][1]);
+//            mPressedPath.moveTo(circlePoints[0][0] + circleCenterPressed[3][0]
+//                    , circlePoints[0][1] + circleCenterPressed[3][1]);
+//            int j = 1;
+//            while (circlePoints[j][0] * SQRT_3 < circlePoints[j][1]) {
+//                mPath.lineTo(circlePoints[j][0] + circleCenter[3][0]
+//                        , circlePoints[j][1] + circleCenter[3][1]);
+//                mPressedPath.lineTo(circlePoints[j][0] + circleCenterPressed[3][0]
+//                        , circlePoints[j][1] + circleCenterPressed[3][1]);
+//                j++;
+//            }
+//            int count30 = j - 1;
+//            int count60 = 2 * circlePointsCount - count30;
+//            mPath.lineTo(roundVertexes[4].x, roundVertexes[4].y);
+//            mPressedPath.lineTo(roundVertexesPressed[4].x, roundVertexesPressed[4].y);
+//            for (int i = 0; i < count60; i++, j++) {
+//                mPath.lineTo(circlePoints[j][0] + circleCenter[2][0]
+//                        , circlePoints[j][1] + circleCenter[2][1]);
+//                mPressedPath.lineTo(circlePoints[j][0] + circleCenterPressed[2][0]
+//                        , circlePoints[j][1] + circleCenterPressed[2][1]);
+//            }
+//            mPath.lineTo(roundVertexes[2].x, roundVertexes[2].y);
+//            mPressedPath.lineTo(roundVertexesPressed[2].x, roundVertexesPressed[2].y);
+//            for (int i = 0; i < count60; i++, j++) {
+//                mPath.lineTo(circlePoints[j][0] + circleCenter[1][0], circlePoints[j][1] + circleCenter[1][1]);
+//                mPressedPath.lineTo(circlePoints[j][0] + circleCenterPressed[1][0]
+//                        , circlePoints[j][1] + circleCenterPressed[1][1]);
+//            }
+//            mPath.lineTo(roundVertexes[0].x, roundVertexes[0].y);
+//            mPressedPath.lineTo(roundVertexesPressed[0].x, roundVertexesPressed[0].y);
+//            for (int i = 0; i < count30 * 2; i++, j++) {
+//                mPath.lineTo(circlePoints[j][0] + circleCenter[0][0], circlePoints[j][1] + circleCenter[0][1]);
+//                mPressedPath.lineTo(circlePoints[j][0] + circleCenterPressed[0][0]
+//                        , circlePoints[j][1] + circleCenterPressed[0][1]);
+//            }
+//            mPath.lineTo(roundVertexes[10].x, roundVertexes[10].y);
+//            mPressedPath.lineTo(roundVertexesPressed[10].x, roundVertexesPressed[10].y);
+//            for (int i = 0; i < count60; j++, i++) {
+//                mPath.lineTo(circlePoints[j][0] + circleCenter[5][0], circlePoints[j][1] + circleCenter[5][1]);
+//                mPressedPath.lineTo(circlePoints[j][0] + circleCenterPressed[5][0]
+//                        , circlePoints[j][1] + circleCenterPressed[5][1]);
+//            }
+//            mPath.lineTo(roundVertexes[8].x, roundVertexes[8].y);
+//            mPressedPath.lineTo(roundVertexesPressed[8].x, roundVertexesPressed[8].y);
+//            for (int i = 0; i < count60; j++, i++) {
+//                mPath.lineTo(circlePoints[j][0] + circleCenter[4][0], circlePoints[j][1] + circleCenter[4][1]);
+//                mPressedPath.lineTo(circlePoints[j][0] + circleCenterPressed[4][0]
+//                        , circlePoints[j][1] + circleCenterPressed[4][1]);
+//            }
+//            mPath.lineTo(roundVertexes[6].x, roundVertexes[6].y);
+//            mPressedPath.lineTo(roundVertexesPressed[6].x, roundVertexesPressed[6].y);
+//            for (; j < circlePointsCount * 8; j++) {
+//                mPath.lineTo(circlePoints[j][0] + circleCenter[3][0], circlePoints[j][1] + circleCenter[3][1]);
+//                mPressedPath.lineTo(circlePoints[j][0] + circleCenterPressed[3][0]
+//                        , circlePoints[j][1] + circleCenterPressed[3][1]);
+//            }
+        } else {
+            mPath.moveTo(vertexes[0].x, vertexes[0].y);
+            mPressedPath.moveTo(vertexesPressed[0].x, vertexesPressed[0].y);
+            for (int i = vertexes.length - 1; i > 0; i--) {
+                mPath.lineTo(vertexes[i].x, vertexes[i].y);
+                mPressedPath.lineTo(vertexesPressed[i].x, vertexesPressed[i].y);
+            }
+        }
+        mPath.close();
+        mPressedPath.close();
+    }
+
     protected void onLayout(boolean changed, float length, int paddingLeft, int paddingTop){
         mLength = length;
-//        if(!changed){
-//            return;
-//        }
+        if(!changed){
+            return;
+        }
         genCenterPoint(paddingLeft, paddingTop);
         float x = center.x;
         float y = center.y;
@@ -268,30 +411,78 @@ public class HexagonMenuItem {
         float tmp1 = SQRT_3 * tmp2;
         float tmp3 = tmp2 * 0.9f;
         float tmp4 = tmp1 * 0.9f;
-        points[0].set(x, y - length);
-        pressedPoints[0].set(x, y - length * 0.9f);
-        points[1].set(x + tmp1, y - tmp2);
-        pressedPoints[1].set(x + tmp4, y - tmp3);
-        points[2].set(x + tmp1, y + tmp2);
-        pressedPoints[2].set(x + tmp4, y + tmp3);
-        points[3].set(x, y + length);
-        pressedPoints[3].set(x, y + length * 0.9f);
-        points[4].set(x - tmp1, y + tmp2);
-        pressedPoints[4].set(x - tmp4, y + tmp3);
-        points[5].set(x - tmp1, y - tmp2);
-        pressedPoints[5].set(x - tmp4, y - tmp3);
-        mPath.reset();
-        mPressedPath.reset();
-        mPath.moveTo(points[0].x, points[0].y);
-        mPressedPath.moveTo(pressedPoints[0].x, pressedPoints[0].y);
-        for(int i = points.length - 1; i > 0; i--){
-            mPath.lineTo(points[i].x, points[i].y);
-            mPressedPath.lineTo(pressedPoints[i].x, pressedPoints[i].y);
-        }
-        mPath.close();
-        mPressedPath.close();
-        outer = new Rect((int)points[5].x , (int)points[0].y
-                , (int)points[1].x + 1, (int)points[3].y + 1);
+        float tmp5 = roundRadius / SQRT_3;
+
+        vertexes[0].set(x, y - length);
+        circleCenter[0][0] = x;
+        circleCenter[0][1] = vertexes[0].y + 2 * tmp5;
+        roundVertexes[0].set(x + roundRadius / 2, vertexes[0].y + tmp5 / 2);
+        roundVertexes[11].set(x - roundRadius / 2, roundVertexes[0].y);
+        vertexesPressed[0].set(x, y - length * 0.9f);
+        circleCenterPressed[0][0] = vertexesPressed[0].x;
+        circleCenterPressed[0][1] = vertexesPressed[0].y + 2 * tmp5;
+        roundVertexesPressed[0].set(vertexesPressed[0].x + roundRadius / 2, vertexesPressed[0].y + tmp5 / 2);
+        roundVertexesPressed[11].set(vertexesPressed[0].x - roundRadius / 2, roundVertexesPressed[0].y);
+
+        vertexes[1].set(x + tmp1, y - tmp2);
+        circleCenter[1][0] = vertexes[1].x - roundRadius;
+        circleCenter[1][1] = vertexes[1].y + tmp5;
+        roundVertexes[1].set(vertexes[1].x - roundRadius / 2, vertexes[1].y - tmp5 / 2);
+        roundVertexes[2].set(vertexes[1].x, vertexes[1].y + tmp5);
+        vertexesPressed[1].set(x + tmp4, y - tmp3);
+        circleCenterPressed[1][0] = vertexesPressed[1].x - roundRadius;
+        circleCenterPressed[1][1] = vertexesPressed[1].y + tmp5;
+        roundVertexesPressed[1].set(vertexesPressed[1].x - roundRadius / 2, vertexesPressed[1].y - tmp5 / 2);
+        roundVertexesPressed[2].set(vertexesPressed[1].x, vertexesPressed[1].y + tmp5);
+
+        vertexes[2].set(x + tmp1, y + tmp2);
+        circleCenter[2][0] = (int) (vertexes[2].x - roundRadius);
+        circleCenter[2][1] = (int) (vertexes[2].y - tmp5);
+        roundVertexes[3].set(vertexes[2].x, vertexes[2].y - tmp5);
+        roundVertexes[4].set(vertexes[2].x - roundRadius / 2, vertexes[2].y + tmp5 / 2);
+        vertexesPressed[2].set(x + tmp4, y + tmp3);
+        circleCenterPressed[2][0] = (int) (vertexesPressed[2].x - roundRadius);
+        circleCenterPressed[2][1] = (int) (vertexesPressed[2].y - tmp5);
+        roundVertexesPressed[3].set(vertexesPressed[2].x, vertexesPressed[2].y - tmp5);
+        roundVertexesPressed[4].set(vertexesPressed[2].x - roundRadius / 2, vertexesPressed[2].y + tmp5 / 2);
+
+        vertexes[3].set(x, y + length);
+        circleCenter[3][0] = (int) vertexes[3].x;
+        circleCenter[3][1] = (int) (vertexes[3].y - 2 * tmp5);
+        roundVertexes[5].set(vertexes[3].x + roundRadius / 2, vertexes[3].y - tmp5 / 2);
+        roundVertexes[6].set(vertexes[3].x - roundRadius / 2, roundVertexes[5].y);
+        vertexesPressed[3].set(x, y + length * 0.9f);
+        circleCenterPressed[3][0] = (int) vertexesPressed[3].x;
+        circleCenterPressed[3][1] = (int) (vertexesPressed[3].y - 2 * tmp5);
+        roundVertexesPressed[5].set(vertexesPressed[3].x + roundRadius / 2, vertexesPressed[3].y - tmp5 / 2);
+        roundVertexesPressed[6].set(vertexesPressed[3].x - roundRadius / 2, roundVertexesPressed[5].y);
+
+        vertexes[4].set(x - tmp1, y + tmp2);
+        circleCenter[4][0] = (int) (vertexes[4].x + roundRadius);
+        circleCenter[4][1] = (int) (vertexes[4].y - tmp5);
+        roundVertexes[7].set(vertexes[4].x + roundRadius / 2, vertexes[4].y + tmp5 / 2);
+        roundVertexes[8].set(vertexes[4].x, vertexes[4].y - tmp5);
+        vertexesPressed[4].set(x - tmp4, y + tmp3);
+        circleCenterPressed[4][0] = (int) (vertexesPressed[4].x + roundRadius);
+        circleCenterPressed[4][1] = (int) (vertexesPressed[4].y - tmp5);
+        roundVertexesPressed[7].set(vertexesPressed[4].x + roundRadius / 2, vertexesPressed[4].y + tmp5 / 2);
+        roundVertexesPressed[8].set(vertexesPressed[4].x, vertexesPressed[4].y - tmp5);
+
+        vertexes[5].set(x - tmp1, y - tmp2);
+        circleCenter[5][0] = (int) (vertexes[5].x + roundRadius);
+        circleCenter[5][1] = (int) (vertexes[5].y + tmp5);
+        roundVertexes[9].set(vertexes[5].x, vertexes[5].y + tmp5);
+        roundVertexes[10].set(vertexes[5].x + roundRadius / 2, vertexes[5].y - tmp5 / 2);
+        vertexesPressed[5].set(x - tmp4, y - tmp3);
+        circleCenterPressed[5][0] = (int) (vertexesPressed[5].x + roundRadius);
+        circleCenterPressed[5][1] = (int) (vertexesPressed[5].y + tmp5);
+        roundVertexesPressed[9].set(vertexesPressed[5].x, vertexesPressed[5].y + tmp5);
+        roundVertexesPressed[10].set(vertexesPressed[5].x + roundRadius / 2, vertexesPressed[5].y - tmp5 / 2);
+
+        genPath();
+
+        outer = new Rect((int) vertexes[5].x , (int) vertexes[0].y
+                , (int) vertexes[1].x + 1, (int) vertexes[3].y + 1);
 
         if(mShader != null){
             initBgImg();
@@ -350,10 +541,7 @@ public class HexagonMenuItem {
      * @return true if it's inside the hexagon's outer rectangle, otherwise, return false;
      */
     public boolean isInsideOuter(float x, float y){
-        if(x >= outer.left && x <= outer.right && y >= outer.top && y <= outer.bottom){
-            return true;
-        }
-        return false;
+        return x >= outer.left && x <= outer.right && y >= outer.top && y <= outer.bottom;
     }
 
     /**
@@ -407,14 +595,14 @@ public class HexagonMenuItem {
         } else{
             //ray 是平行于y轴的线
             y = segmentEnd.y;
-            if(kr != 0) {
-                bs = segmentEnd.y;
-                br = rayEnd.y - rayEnd.x * kr;
-                x = (bs - br) / kr;
-            } else {
+//            if(kr != 0) {
+//                bs = segmentEnd.y;
+//                br = rayEnd.y - rayEnd.x * kr;
+//                x = (bs - br) / kr;
+//            } else {
                 //segment是平行于x轴的线
                 x = rayEnd.x;
-            }
+//            }
         }
         float result = FloatMath.sqrt(dsx * dsx + dsy * dsy) -
                 FloatMath.sqrt((segmentEnd.x - x) * (segmentEnd.x - x)
@@ -422,7 +610,7 @@ public class HexagonMenuItem {
                 - FloatMath.sqrt((segmentStart.x - x) * (segmentStart.x - x)
                 + (segmentStart.y - y) * (segmentStart.y - y));
         //判断交点是否在线段（六边形的边）上
-        if(result < -precision){
+        if(result < -PRECISION){
             return null;
         }
         result = FloatMath.sqrt(drx * drx  + dry * dry) -
@@ -431,7 +619,7 @@ public class HexagonMenuItem {
                 - FloatMath.sqrt((rayStart.x - x) * (rayStart.x - x)
                 + (rayStart.y - y) * (rayStart.y - y));
         //判断交点是否在射线上
-        if(result > -precision){
+        if(result > -PRECISION){
             //交点在线段segment上
             return new Point(x, y);
         }
@@ -462,13 +650,15 @@ public class HexagonMenuItem {
         //取一条(平行于x轴的)射线
         Point point = new Point(x, y);
         Point end = new Point(outer.right + 10, y);
-        for(int i = 0; i < points.length; i++){
-            intersection = getIntersection(point, end, points[i], points[(i+1)%6]);
+        for(int i = 0; i < vertexes.length; i++){
+            intersection = getIntersection(point, end, vertexes[i], vertexes[(i+1)%6]);
             if(intersection != null){
                 count++;
-                if(Math.abs(intersection.x - points[(i+1)%6].x) < precision
-                        && Math.abs(intersection.y - points[(i+1)%6].y) < precision){
-                    //交点即是顶点，不重复计算
+                if(Math.abs(intersection.x - vertexes[(i+1)%6].x) < PRECISION
+                        && Math.abs(intersection.y - vertexes[(i+1)%6].y) < PRECISION
+                        && i != 0 && i != 3){
+                    //交点即是顶点，且边处于射线同一边，不重复计算
+                    //当交点是顶部或底部的顶点时，相交的两条边都处于射线同一侧
                     i++;
                 }
             }

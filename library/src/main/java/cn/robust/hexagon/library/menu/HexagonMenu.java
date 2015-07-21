@@ -16,8 +16,8 @@ import cn.robust.hexagon.library.OnMenuItemClickedListener;
 /**
  * This view must not wrap by RelativeLayout, or the onLayout will work improperly.<br/>
  * Using FrameLayout and make sure this view is the only child is recommended.<br/>
- * @see http://stackoverflow.com/questions/10888466/onmeasure-being-passed-measurespec-exactly-apparently-wrongly
- * @see http://stackoverflow.com/questions/10510371/fill-remaining-space-with-fixed-aspect-ratio-surfaceview/10522282#10522282
+ * @link http://stackoverflow.com/questions/10888466/onmeasure-being-passed-measurespec-exactly-apparently-wrongly
+ * @link http://stackoverflow.com/questions/10510371/fill-remaining-space-with-fixed-aspect-ratio-surfaceview/10522282#10522282
  * <p/>
  * Created by robust on 2014-04-25.
  */
@@ -39,28 +39,25 @@ public class HexagonMenu extends View {
     private int offsetWidth;
     private int offsetHeight;
     private int mGravity = Gravity.CENTER;
+    boolean roundedCorner;
 
     public HexagonMenu(Context context) {
-        super(context);
-        init(context);
+        this(context, null);
     }
 
     public HexagonMenu(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        getAttrs(context, attrs);
-        init(context);
+        this(context, attrs, 0);
     }
 
     public HexagonMenu(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        getAttrs(context, attrs);
+        if(attrs != null){
+            TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.HexagonMenu);
+            mGravity = a.getInt(R.styleable.HexagonMenu_gravity, mGravity);
+            roundedCorner = a.getBoolean(R.styleable.HexagonMenu_roundedCorner, false);
+            a.recycle();
+        }
         init(context);
-    }
-
-    private void getAttrs(Context context, AttributeSet attrs){
-        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.HexagonMenu);
-        mGravity = a.getInt(R.styleable.HexagonMenu_gravity, mGravity);
-        a.recycle();
     }
 
     public void setOnMenuItemClickedListener(OnMenuItemClickedListener listener){
@@ -104,8 +101,6 @@ public class HexagonMenu extends View {
         int minVer = Integer.MAX_VALUE;
         int maxVer = Integer.MIN_VALUE;
         int tmp;
-        int itemLengthMeasureByWidth;
-        int itemLengthMeasureByHeight;
         HexagonMenuItem item;
         itemLength = 0;
         for(int i = 0; i < items.size(); i++){
@@ -208,7 +203,7 @@ public class HexagonMenu extends View {
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
-                HexagonMenuItem item = null;
+                HexagonMenuItem item;
                 for(int i = 0; i < items.size(); i++){
                     item = items.get(items.keyAt(i));
                     if(item.isInsideHexagon(event.getX(), event.getY())){
@@ -302,5 +297,13 @@ public class HexagonMenu extends View {
         widthAndHeight[0] = (1 + horizontal / 2.0f) * SQRT_3;
         widthAndHeight[1] = 0.5f + (vertical + 1) * 1.5f;
         return widthAndHeight;
+    }
+
+    public void setRoundedCorner(boolean roundedCorner){
+        this.roundedCorner = roundedCorner;
+        for(int i = items.size() - 1; i >= 0; i--){
+            items.get(i).genPath();
+        }
+        invalidate();
     }
 }

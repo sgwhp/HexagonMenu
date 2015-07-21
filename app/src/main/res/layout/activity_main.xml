@@ -35,7 +35,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/hexa_bg"
-            android:padding="5dp" />
+            android:padding="5dp"
+            hex:roundedCorner="true"/>
 
     </ScrollView>
 </RelativeLayout>

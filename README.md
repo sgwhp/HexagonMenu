@@ -16,7 +16,7 @@ HexagonMenu is an implementation of two designs from Dribbble [Menu Concept (iOS
   The same with TextView unless it can not be top|bottom or left|right. Use match_parent instead.
   example:
 ```xml
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:hex="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -27,10 +27,11 @@ HexagonMenu is an implementation of two designs from Dribbble [Menu Concept (iOS
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         hex:gravity="top|center_horizontal"
+        hex:roundedCorner="true"
         android:background="@color/hexa_bg"
         android:padding="5dp" />
 
-</RelativeLayout>
+</FrameLayout>
 ```
 
 3.For more details, just look at the sample project.

@@ -10,5 +10,6 @@
             <flag name="center_horizontal" value="1"/>
             <flag name="center_vertical" value="16"/>
         </attr>
+        <attr name="roundedCorner" format="boolean"/>
     </declare-styleable>
 </resources>
