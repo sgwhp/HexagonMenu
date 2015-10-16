@@ -16,7 +16,6 @@ import android.text.BoringLayout;
 import android.text.Layout;
 import android.text.TextPaint;
 import android.text.TextUtils;
-import android.util.FloatMath;
 import android.view.View;
 
 import cn.robust.hexagon.Util;
@@ -604,19 +603,19 @@ public class HexagonMenuItem {
                 x = rayEnd.x;
 //            }
         }
-        float result = FloatMath.sqrt(dsx * dsx + dsy * dsy) -
-                FloatMath.sqrt((segmentEnd.x - x) * (segmentEnd.x - x)
+        double result = Math.sqrt(dsx * dsx + dsy * dsy) -
+                Math.sqrt((segmentEnd.x - x) * (segmentEnd.x - x)
                         + (segmentEnd.y - y) * (segmentEnd.y - y))
-                - FloatMath.sqrt((segmentStart.x - x) * (segmentStart.x - x)
+                - Math.sqrt((segmentStart.x - x) * (segmentStart.x - x)
                 + (segmentStart.y - y) * (segmentStart.y - y));
         //判断交点是否在线段（六边形的边）上
         if(result < -PRECISION){
             return null;
         }
-        result = FloatMath.sqrt(drx * drx  + dry * dry) -
-                FloatMath.sqrt((rayEnd.x - x) * (rayEnd.x - x)
+        result = Math.sqrt(drx * drx  + dry * dry) -
+                Math.sqrt((rayEnd.x - x) * (rayEnd.x - x)
                         + (rayEnd.y - y) * (rayEnd.y - y))
-                - FloatMath.sqrt((rayStart.x - x) * (rayStart.x - x)
+                - Math.sqrt((rayStart.x - x) * (rayStart.x - x)
                 + (rayStart.y - y) * (rayStart.y - y));
         //判断交点是否在射线上
         if(result > -PRECISION){
